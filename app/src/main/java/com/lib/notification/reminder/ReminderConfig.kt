@@ -10,12 +10,11 @@ import com.lib.notification.R
 import com.lib.notification.reminder.entity.ReminderConfItem
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ToolbarConfItem
-import com.lib.notification.reminder.utils.deviceFirstCountryCode
+import com.lib.notification.reminder.utils.getCountryCode
 import com.lib.notification.reminder.utils.isSamsungDevice
 import com.lib.notification.reminder.utils.parseReminderContent
 import com.lib.notification.service.DemoToolbarService
 import org.json.JSONObject
-import java.util.Locale
 
 object ReminderConfig {
 
@@ -117,14 +116,4 @@ object ReminderConfig {
         if (json.isNullOrBlank()) return
         reminderContentList = parseReminderContent(json)
     }
-
-
-    private fun getCountryCode(): String {
-        return deviceFirstCountryCode.ifBlank {
-            val cc = Locale.getDefault().country
-            deviceFirstCountryCode = cc
-            return@ifBlank cc
-        }
-    }
-
 }

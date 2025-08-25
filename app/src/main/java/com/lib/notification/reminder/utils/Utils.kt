@@ -11,8 +11,17 @@ import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ReminderType
 import org.json.JSONArray
+import java.util.Locale
 
 fun isSamsungDevice() = Build.MANUFACTURER.equals("Samsung", ignoreCase = true)
+
+fun getCountryCode(): String {
+    return deviceFirstCountryCode.ifBlank {
+        val cc = Locale.getDefault().country
+        deviceFirstCountryCode = cc
+        return@ifBlank cc
+    }
+}
 
 fun parseReminderContent(jsonString: String): MutableList<ReminderContentItem> {
     val result = mutableListOf<ReminderContentItem>()
