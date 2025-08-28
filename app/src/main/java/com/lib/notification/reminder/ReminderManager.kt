@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat.DecoratedCustomViewStyle
 import androidx.core.app.NotificationManagerCompat
 import com.lib.notification.MainActivity
 import com.lib.notification.R
+import com.lib.notification.event.EventManager
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderConfig.reminderContentList
 import com.lib.notification.reminder.ReminderConfig.reminderImageArr
@@ -35,7 +36,8 @@ object ReminderManager {
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
-        // TODO 触发打点
+        EventManager.customEvent("notify_trigger")
+        EventManager.customEvent(if (ReminderType.TIMER == type) "notify_timer_trigger" else "notify_unlock_trigger")
         buildNotificationChannel()
         val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
             .setSmallIcon(smallIcon)

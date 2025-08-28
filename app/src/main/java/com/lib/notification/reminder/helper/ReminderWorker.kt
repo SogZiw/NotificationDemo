@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import com.lib.notification.event.EventManager
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderManager
 import com.lib.notification.reminder.entity.ReminderType
@@ -18,10 +19,14 @@ import kotlinx.coroutines.launch
 
 object ReminderWorker {
 
-
-    private val workScope by lazy { CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }) }
+    val workScope by lazy { CoroutineScope(Dispatchers.IO + SupervisorJob() + CoroutineExceptionHandler { _, _ -> }) }
 
     fun init() {
+        workScope.launch {
+            tickerFlow(0L, 5 * 60000L).collect {
+                EventManager.customEvent("sessionback")
+            }
+        }
         app.registerReceiver(unlockReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_USER_PRESENT)
         })

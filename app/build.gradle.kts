@@ -32,6 +32,9 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -44,4 +47,10 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // https://github.com/square/okhttp
+    //noinspection UseTomlInstead
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:5.1.0"))
+    //noinspection UseTomlInstead
+    implementation("com.squareup.okhttp3:okhttp")
 }

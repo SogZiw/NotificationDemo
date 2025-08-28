@@ -14,7 +14,7 @@ var reminderUnlockCounts by SPInt(0)
 var reminderTimerLastShow by SpLong(0L)
 var reminderUnlockLastShow by SpLong(0L)
 
-private val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
+val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
 
 class SPInt(private val default: Int) : ReadWriteProperty<Any?, Int> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) = sharedPreferences.getInt(property.name, default)
