@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.content.ContextCompat
 import com.lib.notification.App
+import com.lib.notification.BuildConfig
 import com.lib.notification.R
 import com.lib.notification.reminder.entity.ReminderConfItem
 import com.lib.notification.reminder.entity.ReminderContentItem
@@ -35,7 +36,7 @@ object ReminderConfig {
     const val EXTRA_KEY_REMINDER_TYPE = "EXTRA_KEY_REMINDER_TYPE"
 
     // 打包时改为false
-    val isDebugMode by lazy { true }
+    val isDebugMode by lazy { BuildConfig.DEBUG }
     lateinit var app: App
     val firstCountryCode by lazy { getCountryCode() }
 
