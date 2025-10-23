@@ -76,6 +76,9 @@ object ReminderConfig {
     var popStartHour = 0
     var popEndHour = 0
 
+    var alarmSwitch = true
+    var alarmInterval = 30
+
     // 定时通知配置
     var timerConf: ReminderConfItem? = null
 
@@ -108,6 +111,8 @@ object ReminderConfig {
                 popEndHour = optInt("fl_pop_end", 0)
                 timerConf = ReminderConfItem(optInt("fl_t", 30), optInt("fl_t_limit", 10))
                 unlockConf = ReminderConfItem(optInt("fl_u", 30), optInt("fl_u_limit", 10))
+                alarmSwitch = 1 == optInt("IA_switch", 1)
+                alarmInterval = optInt("IA_int", 30)
             }
         }
     }

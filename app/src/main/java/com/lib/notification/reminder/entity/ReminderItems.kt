@@ -21,4 +21,5 @@ data class ToolbarConfItem(
 enum class ReminderType {
     TIMER,
     UNLOCK,
+    ALARM
 }

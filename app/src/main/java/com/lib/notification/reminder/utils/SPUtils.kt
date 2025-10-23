@@ -13,6 +13,7 @@ var reminderTimerCounts by SPInt(0)
 var reminderUnlockCounts by SPInt(0)
 var reminderTimerLastShow by SpLong(0L)
 var reminderUnlockLastShow by SpLong(0L)
+var nextAlarmSetTime by SpLong(0L)
 
 val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
 

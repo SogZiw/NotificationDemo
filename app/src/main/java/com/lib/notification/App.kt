@@ -2,6 +2,7 @@ package com.lib.notification
 
 import android.app.Application
 import com.lib.notification.reminder.ReminderConfig
+import com.lib.notification.reminder.ReminderManager
 import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.helper.ReminderWorker
 
@@ -13,6 +14,7 @@ class App : Application() {
         AppLifecycleManager.init(this)
         ReminderWorker.init()
         ReminderConfig.showToolbar(this)
+        ReminderManager.scheduleNextAlarm()
         initTestData()
     }
 

@@ -1,11 +1,14 @@
 package com.lib.notification.reminder
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.text.Html
 import android.widget.RemoteViews
+import androidx.core.app.AlarmManagerCompat
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.DecoratedCustomViewStyle
@@ -13,6 +16,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.lib.notification.MainActivity
 import com.lib.notification.R
 import com.lib.notification.event.EventManager
+import com.lib.notification.receiver.AlarmReceiver
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderConfig.reminderContentList
 import com.lib.notification.reminder.ReminderConfig.reminderImageArr
@@ -23,6 +27,7 @@ import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
+import com.lib.notification.reminder.utils.nextAlarmSetTime
 import com.lib.notification.reminder.utils.reminderTimerLastShow
 import com.lib.notification.reminder.utils.reminderUnlockLastShow
 import com.lib.notification.reminder.utils.updateCurrentCounts
@@ -31,13 +36,47 @@ import kotlin.random.Random
 
 object ReminderManager {
 
+    private val alarmManager by lazy { app.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+
+    fun scheduleNextAlarm() {
+        if (ReminderConfig.alarmSwitch.not() || ReminderConfig.alarmInterval <= 0) return
+        if (nextAlarmSetTime > System.currentTimeMillis()) return
+        val pendingIntent = PendingIntent.getBroadcast(
+            app,
+            Random.nextInt(),
+            Intent(app, AlarmReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val nextTime = System.currentTimeMillis() + ReminderConfig.alarmInterval * 60000L
+        nextAlarmSetTime = nextTime
+        AlarmManagerCompat.setAndAllowWhileIdle(
+            alarmManager,
+            AlarmManager.RTC_WAKEUP,
+            nextTime,
+            pendingIntent
+        )
+    }
+
     @SuppressLint("MissingPermission")
     fun show(type: ReminderType) {
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
-        EventManager.customEvent("notify_trigger")
-        EventManager.customEvent(if (ReminderType.TIMER == type) "notify_timer_trigger" else "notify_unlock_trigger")
+        when (type) {
+            ReminderType.TIMER -> {
+                EventManager.customEvent("notify_trigger")
+                EventManager.customEvent("notify_timer_trigger")
+            }
+
+            ReminderType.UNLOCK -> {
+                EventManager.customEvent("notify_trigger")
+                EventManager.customEvent("notify_unlock_trigger")
+            }
+
+            ReminderType.ALARM -> {
+                EventManager.customEvent("IA_trigger")
+            }
+        }
         buildNotificationChannel()
         val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
             .setSmallIcon(smallIcon)
@@ -94,8 +133,9 @@ object ReminderManager {
 
     private fun canShow(type: ReminderType): Boolean {
         if (AppLifecycleManager.isAppForeground()) return false
-        if (ReminderConfig.popSwitchOn.not()) return false
         if (isGrantedPostNotification().not()) return false
+        if (type == ReminderType.ALARM) return true
+        if (ReminderConfig.popSwitchOn.not()) return false
         val item = (if (ReminderType.TIMER == type) ReminderConfig.timerConf else ReminderConfig.unlockConf) ?: return false
         val lastShow = if (ReminderType.TIMER == type) reminderTimerLastShow else reminderUnlockLastShow
         if (item.interval != 0 && (System.currentTimeMillis() - lastShow) < (item.interval * 60000L)) return false
