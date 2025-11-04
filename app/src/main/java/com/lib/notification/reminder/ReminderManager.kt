@@ -5,7 +5,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.os.Build
+import android.support.v4.media.session.MediaSessionCompat
 import android.text.Html
 import android.widget.RemoteViews
 import androidx.core.app.AlarmManagerCompat
@@ -17,6 +19,7 @@ import com.lib.notification.MainActivity
 import com.lib.notification.R
 import com.lib.notification.event.EventManager
 import com.lib.notification.receiver.AlarmReceiver
+import com.lib.notification.reminder.ReminderConfig.MEDIA_NOTIFICATION_ID
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderConfig.reminderContentList
 import com.lib.notification.reminder.ReminderConfig.reminderImageArr
@@ -25,6 +28,7 @@ import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.utils.getCurrentCounts
+import com.lib.notification.reminder.utils.isEnableSpecialMode
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
 import com.lib.notification.reminder.utils.nextAlarmSetTime
@@ -76,6 +80,8 @@ object ReminderManager {
             ReminderType.ALARM -> {
                 EventManager.customEvent("IA_trigger")
             }
+
+            else -> Unit
         }
         buildNotificationChannel()
         val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
@@ -100,6 +106,38 @@ object ReminderManager {
             NotificationManagerCompat.from(app).notify(content.notificationId, builder.build())
             if (ReminderType.TIMER == type) reminderTimerLastShow = System.currentTimeMillis() else reminderUnlockLastShow = System.currentTimeMillis()
             updateCurrentCounts(type)
+        }
+    }
+
+    private fun showMediaNotification(originType: ReminderType) {
+        val content = reminderContentList.randomOrNull() ?: return
+        val imageIcon = reminderImageArr.randomOrNull() ?: return
+        EventManager.customEvent("mediapop_trigger")
+        buildNotificationChannel()
+        val mMediaSession = MediaSessionCompat(app, "MediaSession")
+        mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+        mMediaSession.isActive = true
+        val style = androidx.media.app.NotificationCompat.MediaStyle()
+            .setShowActionsInCompactView(0, 1, 2)
+            .setMediaSession(mMediaSession.sessionToken)
+
+        val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
+            .setSmallIcon(smallIcon)
+            .setStyle(style)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(goLoadingIntent(ReminderType.MEDIA, content))
+            .setAutoCancel(true)
+            .setGroupSummary(false)
+            .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
+            .setLargeIcon(Icon.createWithResource(app, imageIcon))
+            .setContentTitle(content.button)
+            .setContentText(content.text)
+
+        runCatching {
+            NotificationManagerCompat.from(app).notify(MEDIA_NOTIFICATION_ID, builder.build())
+            if (ReminderType.TIMER == originType) reminderTimerLastShow = System.currentTimeMillis() else reminderUnlockLastShow = System.currentTimeMillis()
+            updateCurrentCounts(originType)
         }
     }
 
@@ -133,9 +171,19 @@ object ReminderManager {
 
     private fun canShow(type: ReminderType): Boolean {
         if (AppLifecycleManager.isAppForeground()) return false
-        if (isGrantedPostNotification().not()) return false
-        if (type == ReminderType.ALARM) return true
         if (ReminderConfig.popSwitchOn.not()) return false
+        if (isGrantedPostNotification().not()) {
+            if (isEnableSpecialMode && judgeConfig(type)) {
+                showMediaNotification(type)
+            }
+            return false
+        }
+        if (type == ReminderType.ALARM) return true
+        return judgeConfig(type)
+    }
+
+    // 判断通知配置相关的，提出来了
+    private fun judgeConfig(type: ReminderType): Boolean {
         val item = (if (ReminderType.TIMER == type) ReminderConfig.timerConf else ReminderConfig.unlockConf) ?: return false
         val lastShow = if (ReminderType.TIMER == type) reminderTimerLastShow else reminderUnlockLastShow
         if (item.interval != 0 && (System.currentTimeMillis() - lastShow) < (item.interval * 60000L)) return false

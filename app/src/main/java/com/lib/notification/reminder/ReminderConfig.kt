@@ -26,6 +26,8 @@ object ReminderConfig {
     const val TOOLBAR_CHANNEL_ID = "Toolbar"
     const val TOOLBAR_NOTIFICATION_ID = 100001
 
+    const val MEDIA_NOTIFICATION_ID = 100002
+
     // 普通通知channel id
     const val REMINDER_CHANNEL_ID = "important_message"
 

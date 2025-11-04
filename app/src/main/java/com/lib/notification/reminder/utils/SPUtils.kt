@@ -14,8 +14,17 @@ var reminderUnlockCounts by SPInt(0)
 var reminderTimerLastShow by SpLong(0L)
 var reminderUnlockLastShow by SpLong(0L)
 var nextAlarmSetTime by SpLong(0L)
+// key:isEnableSpecialMode 需要flutter端在判断是否满足条件则设置为true
+var isEnableSpecialMode by SPBoolean(false)
 
 val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
+
+class SPBoolean(private val default: Boolean) : ReadWriteProperty<Any?, Boolean> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>) = sharedPreferences.getBoolean(property.name, default)
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) {
+        sharedPreferences.edit(commit = true) { putBoolean(property.name, value) }
+    }
+}
 
 class SPInt(private val default: Int) : ReadWriteProperty<Any?, Int> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) = sharedPreferences.getInt(property.name, default)

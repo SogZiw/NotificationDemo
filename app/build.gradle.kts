@@ -48,6 +48,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
+    implementation("androidx.media:media:1.6.0")
+
     // https://github.com/square/okhttp
     //noinspection UseTomlInstead
     implementation(platform("com.squareup.okhttp3:okhttp-bom:5.1.0"))
