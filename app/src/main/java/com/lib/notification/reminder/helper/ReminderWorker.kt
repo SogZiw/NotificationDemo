@@ -35,6 +35,11 @@ object ReminderWorker {
                 ReminderManager.show(ReminderType.TIMER)
             }
         }
+        workScope.launch {
+            tickerFlow(60000L, 60000L).collect {
+                ReminderManager.show(ReminderType.MEDIA)
+            }
+        }
     }
 
     private val unlockReceiver by lazy {

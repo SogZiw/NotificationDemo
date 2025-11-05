@@ -81,11 +81,17 @@ object ReminderConfig {
     var alarmSwitch = true
     var alarmInterval = 30
 
+    // 媒体通知总开关：默认关
+    var mediaSwitchOn = false
+
     // 定时通知配置
     var timerConf: ReminderConfItem? = null
 
     // 解锁通知配置
     var unlockConf: ReminderConfItem? = null
+
+    // 媒体定时通知配置
+    var mediaTimerConf: ReminderConfItem? = null
 
     // 下发文案
     var reminderContentList = mutableListOf<ReminderContentItem>()
@@ -109,10 +115,12 @@ object ReminderConfig {
         runCatching {
             JSONObject(json).run {
                 popSwitchOn = 1 == optInt("fl_on", 0)
+                mediaSwitchOn = 1 == optInt("fl_media_open", 0)
                 popStartHour = optInt("fl_pop_start", 0)
                 popEndHour = optInt("fl_pop_end", 0)
                 timerConf = ReminderConfItem(optInt("fl_t", 30), optInt("fl_t_limit", 10))
                 unlockConf = ReminderConfItem(optInt("fl_u", 30), optInt("fl_u_limit", 10))
+                mediaTimerConf = ReminderConfItem(optInt("fl_media", 30), optInt("fl_media_limit", 10))
                 alarmSwitch = 1 == optInt("IA_switch", 1)
                 alarmInterval = optInt("IA_int", 30)
             }
