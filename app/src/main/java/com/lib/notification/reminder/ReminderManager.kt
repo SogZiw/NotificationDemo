@@ -121,8 +121,8 @@ object ReminderManager {
         if (isEnableSpecialMode.not() || ReminderConfig.mediaSwitchOn.not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
-        EventManager.customEvent("mediapop_trigger")
         buildNotificationChannel()
+        // tag最好修改下
         val mMediaSession = MediaSessionCompat(app, "MediaSession")
         mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
         mMediaSession.isActive = true
@@ -135,7 +135,7 @@ object ReminderManager {
             .setStyle(style)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(goLoadingIntent(ReminderType.MEDIA, content))
+            .setContentIntent(goLoadingIntent(originType, ReminderType.MEDIA, content))
             .setAutoCancel(true)
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
@@ -152,6 +152,16 @@ object ReminderManager {
                 else -> Unit
             }
             updateCurrentCounts(originType)
+            EventManager.customEvent(
+                "mediapop_trigger", hashMapOf(
+                    "from_type" to when (originType) {
+                        ReminderType.UNLOCK -> "unlock"
+                        ReminderType.ALARM -> "alarm"
+                        ReminderType.MEDIA -> "timenew"
+                        else -> ""
+                    }
+                )
+            )
         }
     }
 
@@ -166,6 +176,15 @@ object ReminderManager {
 
     private fun goLoadingIntent(type: ReminderType, item: ReminderContentItem): PendingIntent {
         return PendingIntent.getActivity(app, Random.nextInt(), Intent(app, MainActivity::class.java).apply {
+            putExtra(ReminderConfig.EXTRA_KEY_REMINDER_TYPE, type.ordinal)
+            putExtra(ReminderConfig.EXTRA_KEY_JUMP_TO, item.jump)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }, PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun goLoadingIntent(originType: ReminderType, type: ReminderType, item: ReminderContentItem): PendingIntent {
+        return PendingIntent.getActivity(app, Random.nextInt(), Intent(app, MainActivity::class.java).apply {
+            putExtra(ReminderConfig.EXTRA_KEY_ORIGIN_REMINDER_TYPE, originType.ordinal)
             putExtra(ReminderConfig.EXTRA_KEY_REMINDER_TYPE, type.ordinal)
             putExtra(ReminderConfig.EXTRA_KEY_JUMP_TO, item.jump)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)

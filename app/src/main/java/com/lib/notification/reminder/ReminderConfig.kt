@@ -36,6 +36,7 @@ object ReminderConfig {
 
     const val EXTRA_KEY_JUMP_TO = "EXTRA_JUMP_TO"
     const val EXTRA_KEY_REMINDER_TYPE = "EXTRA_KEY_REMINDER_TYPE"
+    const val EXTRA_KEY_ORIGIN_REMINDER_TYPE = "EXTRA_KEY_ORIGIN_REMINDER_TYPE"
 
     // 打包时改为false
     val isDebugMode by lazy { BuildConfig.DEBUG }
