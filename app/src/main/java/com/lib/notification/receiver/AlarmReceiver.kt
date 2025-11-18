@@ -9,7 +9,9 @@ import com.lib.notification.reminder.entity.ReminderType
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        ReminderManager.show(ReminderType.ALARM)
+        runCatching {
+            ReminderManager.show(ReminderType.ALARM)
+        }
         ReminderManager.scheduleNextAlarm()
     }
 
