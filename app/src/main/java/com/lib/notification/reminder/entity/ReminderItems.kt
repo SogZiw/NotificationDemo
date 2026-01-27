@@ -18,6 +18,15 @@ data class ToolbarConfItem(
     val jump: Int,
 )
 
+data class OverlayConfItem(
+    val switch: Boolean,
+    val rate: Int,
+    val timeInterval: Int,
+    val timeMax: Int,
+    val unlockInterval: Int,
+    val unlockMax: Int
+)
+
 enum class ReminderType {
     TIMER,
     UNLOCK,

@@ -5,6 +5,7 @@ import com.lib.notification.reminder.ReminderConfig
 import com.lib.notification.reminder.ReminderManager
 import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.helper.ReminderWorker
+import com.lib.notification.reminder.utils.isEnableSpecialMode
 
 class App : Application() {
 
@@ -19,6 +20,17 @@ class App : Application() {
     }
 
     private fun initTestData() {
+        isEnableSpecialMode = true
+        ReminderConfig.formatWinConf("""
+            {
+               "winpop_active":1,
+               "misleading_percent":70,
+               "winpop_t_interval":10,
+               "winpop_t_limit":30,
+               "winpop_u_interval":0,
+               "winpop_u_limit":30
+            }
+        """.trimIndent())
         ReminderConfig.formatPopConf(
             """
             {

@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.lib.notification.App
 import com.lib.notification.BuildConfig
 import com.lib.notification.R
+import com.lib.notification.reminder.entity.OverlayConfItem
 import com.lib.notification.reminder.entity.ReminderConfItem
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ToolbarConfItem
@@ -82,6 +83,9 @@ object ReminderConfig {
     var alarmSwitch = true
     var alarmInterval = 30
 
+    // 悬浮窗配置
+    var overlayConf: OverlayConfItem? = null
+
     // 媒体通知总开关：默认关
     var mediaSwitchOn = false
 
@@ -132,5 +136,22 @@ object ReminderConfig {
     fun formatContent(json: String?) {
         if (json.isNullOrBlank()) return
         reminderContentList = parseReminderContent(json)
+    }
+
+    // 格式化悬浮窗配置
+    fun formatWinConf(json: String?) {
+        if (json.isNullOrBlank()) return
+        runCatching {
+            JSONObject(json).run {
+                overlayConf = OverlayConfItem(
+                    switch = 1 == optInt("winpop_active", 0),
+                    rate = optInt("misleading_percent", 60),
+                    timeInterval = optInt("winpop_t_interval", 30),
+                    timeMax = optInt("winpop_t_limit", 10),
+                    unlockInterval = optInt("winpop_u_interval", 10),
+                    unlockMax = optInt("winpop_u_limit", 10)
+                )
+            }
+        }
     }
 }

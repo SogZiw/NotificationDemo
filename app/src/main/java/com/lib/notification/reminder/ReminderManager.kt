@@ -27,9 +27,11 @@ import com.lib.notification.reminder.ReminderConfig.smallIcon
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.helper.AppLifecycleManager
+import com.lib.notification.reminder.helper.ReminderWorker.workScope
 import com.lib.notification.reminder.utils.fetchReminderLastShow
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isEnableSpecialMode
+import com.lib.notification.reminder.utils.isGrantedOverlay
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
 import com.lib.notification.reminder.utils.nextAlarmSetTime
@@ -37,6 +39,8 @@ import com.lib.notification.reminder.utils.reminderMediaTimerLastShow
 import com.lib.notification.reminder.utils.reminderTimerLastShow
 import com.lib.notification.reminder.utils.reminderUnlockLastShow
 import com.lib.notification.reminder.utils.updateCurrentCounts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.random.Random
 
@@ -49,7 +53,7 @@ object ReminderManager {
         if (nextAlarmSetTime > System.currentTimeMillis()) return
         val pendingIntent = PendingIntent.getBroadcast(
             app,
-            Random.nextInt(),
+            Random.nextInt(1000, 1500),
             Intent(app, AlarmReceiver::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -92,6 +96,8 @@ object ReminderManager {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(goLoadingIntent(type, content))
             .setAutoCancel(true)
+            .setContentTitle(content.button)
+            .setContentText(content.text)
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -100,9 +106,14 @@ object ReminderManager {
             builder.setCustomContentView(tiny).setCustomHeadsUpContentView(tiny).setCustomBigContentView(large)
             builder.setStyle(DecoratedCustomViewStyle())
         } else {
-            val mid = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+            val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)
             val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-            builder.setCustomContentView(mid).setCustomHeadsUpContentView(mid).setCustomBigContentView(large)
+            if (isXiaomi) {
+                val mid = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+                builder.setCustomContentView(mid).setCustomHeadsUpContentView(mid).setCustomBigContentView(large)
+            } else {
+                builder.setCustomContentView(large).setCustomHeadsUpContentView(large).setCustomBigContentView(large)
+            }
         }
         runCatching {
             NotificationManagerCompat.from(app).notify(content.notificationId, builder.build())
@@ -112,7 +123,7 @@ object ReminderManager {
                 ReminderType.MEDIA -> reminderMediaTimerLastShow = System.currentTimeMillis()
                 else -> Unit
             }
-            updateCurrentCounts(type)
+            updateCurrentCounts(type, false)
         }
     }
 
@@ -122,46 +133,48 @@ object ReminderManager {
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
         buildNotificationChannel()
-        // tag最好修改下
-        val mMediaSession = MediaSessionCompat(app, "MediaSession")
-        mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
-        mMediaSession.isActive = true
-        val style = androidx.media.app.NotificationCompat.MediaStyle()
-            .setShowActionsInCompactView(0, 1, 2)
-            .setMediaSession(mMediaSession.sessionToken)
+        workScope.launch(Dispatchers.Main) {
+            // tag最好修改下
+            val mMediaSession = MediaSessionCompat(app, "MediaSession")
+            mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+            mMediaSession.isActive = true
+            val style = androidx.media.app.NotificationCompat.MediaStyle()
+                //.setShowActionsInCompactView(0, 1, 2)
+                .setMediaSession(mMediaSession.sessionToken)
 
-        val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
-            .setSmallIcon(smallIcon)
-            .setStyle(style)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(goLoadingIntent(originType, ReminderType.MEDIA, content))
-            .setAutoCancel(true)
-            .setGroupSummary(false)
-            .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
-            .setLargeIcon(Icon.createWithResource(app, imageIcon))
-            .setContentTitle(content.button)
-            .setContentText(content.text)
+            val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
+                .setSmallIcon(smallIcon)
+                .setStyle(style)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(goLoadingIntent(originType, ReminderType.MEDIA, content))
+                .setAutoCancel(true)
+                .setGroupSummary(false)
+                .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
+                .setLargeIcon(Icon.createWithResource(app, imageIcon))
+                .setContentTitle(content.button)
+                .setContentText(content.text)
 
-        runCatching {
-            NotificationManagerCompat.from(app).notify(MEDIA_NOTIFICATION_ID, builder.build())
-            when (originType) {
-                ReminderType.TIMER -> reminderTimerLastShow = System.currentTimeMillis()
-                ReminderType.UNLOCK -> reminderUnlockLastShow = System.currentTimeMillis()
-                ReminderType.MEDIA -> reminderMediaTimerLastShow = System.currentTimeMillis()
-                else -> Unit
-            }
-            updateCurrentCounts(originType)
-            EventManager.customEvent(
-                "mediapop_trigger", hashMapOf(
-                    "from_type" to when (originType) {
-                        ReminderType.UNLOCK -> "unlock"
-                        ReminderType.ALARM -> "alarm"
-                        ReminderType.MEDIA -> "timenew"
-                        else -> ""
-                    }
+            runCatching {
+                NotificationManagerCompat.from(app).notify(MEDIA_NOTIFICATION_ID, builder.build())
+                when (originType) {
+                    ReminderType.TIMER -> reminderTimerLastShow = System.currentTimeMillis()
+                    ReminderType.UNLOCK -> reminderUnlockLastShow = System.currentTimeMillis()
+                    ReminderType.MEDIA -> reminderMediaTimerLastShow = System.currentTimeMillis()
+                    else -> Unit
+                }
+                updateCurrentCounts(originType, false)
+                EventManager.customEvent(
+                    "mediapop_trigger", hashMapOf(
+                        "from_type" to when (originType) {
+                            ReminderType.UNLOCK -> "unlock"
+                            ReminderType.ALARM -> "alarm"
+                            ReminderType.MEDIA -> "timenew"
+                            else -> ""
+                        }
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -202,10 +215,35 @@ object ReminderManager {
         )
     }
 
+    private fun showOverlay(type: ReminderType) {
+        val content = reminderContentList.randomOrNull() ?: return
+        val imageIcon = reminderImageArr.randomOrNull() ?: return
+        workScope.launch(Dispatchers.Main) {
+            OverlayController.show(type, content, imageIcon)
+        }
+    }
+
     private fun canShow(type: ReminderType): Boolean {
         if (AppLifecycleManager.isAppForeground()) return false
-        if (ReminderConfig.popSwitchOn.not()) return false
+        val overlayItem = ReminderConfig.overlayConf
+        if (null != overlayItem && overlayItem.switch && isEnableSpecialMode && isGrantedOverlay()) {
+            when (type) {
+                ReminderType.ALARM -> {
+                    showOverlay(type)
+                    return false
+                }
 
+                ReminderType.TIMER, ReminderType.UNLOCK -> {
+                    if (judgeWinConfig(type)) {
+                        showOverlay(type)
+                        return false
+                    }
+                }
+
+                else -> Unit
+            }
+        }
+        if (ReminderConfig.popSwitchOn.not()) return false
         when (type) {
             ReminderType.TIMER -> {
                 return isGrantedPostNotification() && judgeConfig(type)
@@ -235,6 +273,25 @@ object ReminderManager {
         }
     }
 
+    // 判断悬浮窗配置是否满足
+    private fun judgeWinConfig(type: ReminderType): Boolean {
+        val confItem = ReminderConfig.overlayConf ?: return false
+        val lastShow = fetchReminderLastShow(type, true)
+        val interval = if (ReminderType.TIMER == type) confItem.timeInterval else confItem.unlockInterval
+        if (interval != 0 && (System.currentTimeMillis() - lastShow) < (interval * 60000L)) return false
+        val max = if (ReminderType.TIMER == type) confItem.timeMax else confItem.unlockMax
+        if (max != 0 && getCurrentCounts(type, true) >= max) return false
+        if (ReminderType.TIMER == type && ReminderConfig.popStartHour != ReminderConfig.popEndHour && isInteractive().not()) {
+            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            if (ReminderConfig.popEndHour > ReminderConfig.popStartHour) {
+                if (currentHour in ReminderConfig.popStartHour until ReminderConfig.popEndHour) return false
+            } else {
+                if (currentHour >= ReminderConfig.popStartHour || currentHour in 0 until ReminderConfig.popEndHour) return false
+            }
+        }
+        return true
+    }
+
     // 判断通知配置相关的，提出来了
     private fun judgeConfig(type: ReminderType): Boolean {
         val item = when (type) {
@@ -243,10 +300,10 @@ object ReminderManager {
             ReminderType.MEDIA -> ReminderConfig.mediaTimerConf
             else -> null
         } ?: return false
-        val lastShow = fetchReminderLastShow(type)
+        val lastShow = fetchReminderLastShow(type, false)
         if (item.interval != 0 && (System.currentTimeMillis() - lastShow) < (item.interval * 60000L)) return false
-        if (item.max != 0 && getCurrentCounts(type) >= item.max) return false
-        if (ReminderType.TIMER == type && ReminderConfig.popStartHour != ReminderConfig.popEndHour && isInteractive().not()) {
+        if (item.max != 0 && getCurrentCounts(type, false) >= item.max) return false
+        if ((ReminderType.TIMER == type || ReminderType.MEDIA == type) && ReminderConfig.popStartHour != ReminderConfig.popEndHour && isInteractive().not()) {
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             if (ReminderConfig.popEndHour > ReminderConfig.popStartHour) {
                 if (currentHour in ReminderConfig.popStartHour until ReminderConfig.popEndHour) return false

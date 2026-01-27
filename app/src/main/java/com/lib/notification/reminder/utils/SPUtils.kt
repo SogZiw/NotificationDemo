@@ -13,15 +13,22 @@ var reminderDailyTime by SpLong(0L)
 var reminderTimerCounts by SPInt(0)
 var reminderUnlockCounts by SPInt(0)
 var reminderMediaTimerCounts by SPInt(0)
+var reminderTimerWinCounts by SPInt(0)
+var reminderUnlockWinCounts by SPInt(0)
 
 var reminderTimerLastShow by SpLong(0L)
 var reminderUnlockLastShow by SpLong(0L)
 var reminderMediaTimerLastShow by SpLong(0L)
+var reminderTimerWinLastShow by SpLong(0L)
+var reminderUnlockWinLastShow by SpLong(0L)
 
 var nextAlarmSetTime by SpLong(0L)
 
-// key:isEnableSpecialMode 需要flutter端在判断是否满足条件则设置为true
+// key:isEnableSpecialMode 需要flutter端在判断是否满足条件则设置为true：包含cloak以及install referrer买量用户的判断
 var isEnableSpecialMode by SPBoolean(false)
+
+// 是否是第一次悬浮窗误触
+var isFirstMistouch by SPBoolean(true)
 
 val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
 
