@@ -2,7 +2,13 @@ package com.lib.notification.reminder.helper
 
 import android.app.Activity
 import android.app.Application
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+import com.lib.notification.MainActivity
+import com.lib.notification.reminder.utils.isEnableSpecialMode
 
 object AppLifecycleManager {
 
@@ -23,7 +29,16 @@ object AppLifecycleManager {
             }
 
             override fun onActivityPaused(activity: Activity) = Unit
-            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityResumed(activity: Activity) {
+                // todo: MainActivity改成广告的activity 或者 非basectivity
+                if (activity !is MainActivity) {
+                    // 需要cloak+referrer买量用户+admob审核屏蔽
+                    if (isEnableSpecialMode) {
+                        hideSystemBars(activity)
+                    }
+                }
+            }
+
             override fun onActivitySaveInstanceState(activity: Activity, bundle: Bundle) = Unit
 
             override fun onActivityStarted(activity: Activity) {
@@ -45,6 +60,19 @@ object AppLifecycleManager {
                 if (adActivityTag.any { actClzName.contains(it) }) {
                     act.finish()
                 }
+            }
+        }
+    }
+
+    fun hideSystemBars(activity: Activity) {
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val controller = activity.window.insetsController ?: return
+                controller.hide(WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                activity.window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_FULLSCREEN
             }
         }
     }
