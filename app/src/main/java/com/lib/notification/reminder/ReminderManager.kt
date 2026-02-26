@@ -31,6 +31,7 @@ import com.lib.notification.reminder.helper.ReminderWorker.workScope
 import com.lib.notification.reminder.utils.fetchReminderLastShow
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isEnableSpecialMode
+import com.lib.notification.reminder.utils.isGoogleDevice
 import com.lib.notification.reminder.utils.isGrantedOverlay
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
@@ -116,7 +117,9 @@ object ReminderManager {
             }
         }
         runCatching {
-            NotificationManagerCompat.from(app).notify(content.notificationId, builder.build())
+            // 10000这个id自己改下
+            val notificationId = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && isGoogleDevice()) 10000 else content.notificationId
+            NotificationManagerCompat.from(app).notify(notificationId, builder.build())
             when (type) {
                 ReminderType.TIMER -> reminderTimerLastShow = System.currentTimeMillis()
                 ReminderType.UNLOCK -> reminderUnlockLastShow = System.currentTimeMillis()

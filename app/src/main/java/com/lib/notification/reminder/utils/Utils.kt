@@ -16,6 +16,8 @@ import java.util.Locale
 
 fun isSamsungDevice() = Build.MANUFACTURER.equals("Samsung", ignoreCase = true)
 
+fun isGoogleDevice() = Build.MANUFACTURER.equals("Google", ignoreCase = true)
+
 fun getCountryCode(): String {
     return deviceFirstCountryCode.ifBlank {
         val cc = Locale.getDefault().country
