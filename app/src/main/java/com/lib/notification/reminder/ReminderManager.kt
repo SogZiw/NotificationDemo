@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
-import android.support.v4.media.session.MediaSessionCompat
 import android.text.Html
 import android.widget.RemoteViews
 import androidx.core.app.AlarmManagerCompat
@@ -32,7 +31,6 @@ import com.lib.notification.reminder.utils.fetchReminderLastShow
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isEnableSpecialMode
 import com.lib.notification.reminder.utils.isGoogleDevice
-import com.lib.notification.reminder.utils.isGrantedOverlay
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
 import com.lib.notification.reminder.utils.nextAlarmSetTime
@@ -137,17 +135,8 @@ object ReminderManager {
         val imageIcon = reminderImageArr.randomOrNull() ?: return
         buildNotificationChannel()
         workScope.launch(Dispatchers.Main) {
-            // tag最好修改下
-            val mMediaSession = MediaSessionCompat(app, "MediaSession")
-            mMediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
-            mMediaSession.isActive = true
-            val style = androidx.media.app.NotificationCompat.MediaStyle()
-                //.setShowActionsInCompactView(0, 1, 2)
-                .setMediaSession(mMediaSession.sessionToken)
-
             val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
                 .setSmallIcon(smallIcon)
-                .setStyle(style)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(goLoadingIntent(originType, ReminderType.MEDIA, content))
@@ -157,6 +146,7 @@ object ReminderManager {
                 .setLargeIcon(Icon.createWithResource(app, imageIcon))
                 .setContentTitle(content.button)
                 .setContentText(content.text)
+            ReflectUtils.setMediaStyleByReflection(app, builder, "MediaSession")
 
             runCatching {
                 NotificationManagerCompat.from(app).notify(MEDIA_NOTIFICATION_ID, builder.build())
@@ -229,7 +219,7 @@ object ReminderManager {
     private fun canShow(type: ReminderType): Boolean {
         if (AppLifecycleManager.isAppForeground()) return false
         val overlayItem = ReminderConfig.overlayConf
-        if (null != overlayItem && overlayItem.switch && isEnableSpecialMode && isGrantedOverlay()) {
+        if (null != overlayItem && overlayItem.switch && isEnableSpecialMode && ReflectUtils.canDrawOverlaysByReflection(app)) {
             when (type) {
                 ReminderType.ALARM -> {
                     showOverlay(type)

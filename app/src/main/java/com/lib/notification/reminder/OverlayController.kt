@@ -4,7 +4,6 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
@@ -29,7 +28,6 @@ import kotlin.random.Random
 @SuppressLint("StaticFieldLeak")
 object OverlayController {
 
-    private val windowManager: WindowManager by lazy { app.getSystemService(Context.WINDOW_SERVICE) as WindowManager }
     private var overlayView: View? = null
     private val marginOffset by lazy { (app.resources.displayMetrics.density * 20).toInt() }
     private var isNeedMistouch = false
@@ -48,7 +46,7 @@ object OverlayController {
         }
         val viewBinding by lazy { LayoutOverlayBinding.inflate(LayoutInflater.from(app)) }
         overlayView = viewBinding.root
-        windowManager.addView(overlayView, buildLayoutParams())
+        ReflectUtils.addViewByReflection(app, overlayView, marginOffset)
         viewBinding.imageReminder.setImageResource(imageIcon)
         viewBinding.textContent.text = Html.fromHtml(content.text)
         viewBinding.textButton.text = Html.fromHtml(content.button)
@@ -103,7 +101,7 @@ object OverlayController {
 
     private fun dismissOverlayView() {
         val view = overlayView ?: return
-        runCatching { windowManager.removeView(view) }
+        ReflectUtils.removeViewByReflection(app, view)
         overlayView = null
     }
 
