@@ -28,6 +28,8 @@ import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.helper.ReminderWorker.workScope
 import com.lib.notification.reminder.utils.fetchReminderLastShow
+import com.lib.notification.reminder.utils.fetchWinFirst
+import com.lib.notification.reminder.utils.firstInstallTime
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isEnableSpecialMode
 import com.lib.notification.reminder.utils.isGoogleDevice
@@ -221,12 +223,7 @@ object ReminderManager {
         val overlayItem = ReminderConfig.overlayConf
         if (null != overlayItem && overlayItem.switch && isEnableSpecialMode && ReflectUtils.canDrawOverlaysByReflection(app)) {
             when (type) {
-                ReminderType.ALARM -> {
-                    showOverlay(type)
-                    return false
-                }
-
-                ReminderType.TIMER, ReminderType.UNLOCK -> {
+                ReminderType.ALARM, ReminderType.TIMER, ReminderType.UNLOCK -> {
                     if (judgeWinConfig(type)) {
                         showOverlay(type)
                         return false
@@ -269,6 +266,9 @@ object ReminderManager {
     // 判断悬浮窗配置是否满足
     private fun judgeWinConfig(type: ReminderType): Boolean {
         val confItem = ReminderConfig.overlayConf ?: return false
+        val first = fetchWinFirst(type)
+        if (first != 0 && (System.currentTimeMillis() - firstInstallTime()) < (first * 60000L)) return false
+        if (ReminderType.ALARM == type) return true
         val lastShow = fetchReminderLastShow(type, true)
         val interval = if (ReminderType.TIMER == type) confItem.timeInterval else confItem.unlockInterval
         if (interval != 0 && (System.currentTimeMillis() - lastShow) < (interval * 60000L)) return false

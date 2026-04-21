@@ -8,6 +8,7 @@ import com.lib.notification.event.EventManager
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderManager
 import com.lib.notification.reminder.entity.ReminderType
+import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.service.ExtraJobIntentService
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -32,12 +33,7 @@ object ReminderWorker {
         })
         workScope.launch {
             tickerFlow(60000L, 60000L).collect {
-                ReminderManager.show(ReminderType.TIMER)
-            }
-        }
-        workScope.launch {
-            tickerFlow(60000L, 60000L).collect {
-                ReminderManager.show(ReminderType.MEDIA)
+                ReminderManager.show(if (isGrantedPostNotification()) ReminderType.TIMER else ReminderType.MEDIA)
             }
         }
     }

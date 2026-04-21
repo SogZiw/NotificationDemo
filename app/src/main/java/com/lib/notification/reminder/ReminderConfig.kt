@@ -149,7 +149,10 @@ object ReminderConfig {
                     timeInterval = optInt("winpop_t_interval", 30),
                     timeMax = optInt("winpop_t_limit", 10),
                     unlockInterval = optInt("winpop_u_interval", 10),
-                    unlockMax = optInt("winpop_u_limit", 10)
+                    unlockMax = optInt("winpop_u_limit", 10),
+                    timeFirst = optInt("winpop_t_first", 5),
+                    unlockFirst = optInt("winpop_u_first", 5),
+                    alarmFirst = optInt("winpop_a_first", 5),
                 )
             }
         }

@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.text.format.DateUtils
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.lib.notification.reminder.ReminderConfig
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ReminderType
@@ -25,6 +26,8 @@ fun getCountryCode(): String {
         return@ifBlank cc
     }
 }
+
+fun firstInstallTime() = runCatching { app.packageManager.getPackageInfo(app.packageName, 0).firstInstallTime }.getOrNull() ?: 0L
 
 fun parseReminderContent(jsonString: String): MutableList<ReminderContentItem> {
     val result = mutableListOf<ReminderContentItem>()
@@ -60,6 +63,14 @@ fun isGrantedPostNotification(): Boolean {
 }
 
 fun isInteractive() = runCatching { (app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive }.getOrNull() ?: false
+
+fun fetchWinFirst(type: ReminderType): Int {
+    return when (type) {
+        ReminderType.TIMER, ReminderType.MEDIA -> ReminderConfig.overlayConf?.timeFirst ?: 0
+        ReminderType.UNLOCK -> ReminderConfig.overlayConf?.unlockFirst ?: 0
+        ReminderType.ALARM -> ReminderConfig.overlayConf?.alarmFirst ?: 0
+    }
+}
 
 fun fetchReminderLastShow(type: ReminderType, isOverlay: Boolean): Long {
     return when (type) {

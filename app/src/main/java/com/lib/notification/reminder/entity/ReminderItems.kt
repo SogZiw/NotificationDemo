@@ -24,7 +24,10 @@ data class OverlayConfItem(
     val timeInterval: Int,
     val timeMax: Int,
     val unlockInterval: Int,
-    val unlockMax: Int
+    val unlockMax: Int,
+    val timeFirst: Int = 0,
+    val unlockFirst: Int = 0,
+    val alarmFirst: Int = 0
 )
 
 enum class ReminderType {
