@@ -17,6 +17,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.lib.notification.MainActivity
 import com.lib.notification.R
 import com.lib.notification.event.EventManager
+import com.lib.notification.event.TrustedTimeClientIns
 import com.lib.notification.receiver.AlarmReceiver
 import com.lib.notification.reminder.ReminderConfig.MEDIA_NOTIFICATION_ID
 import com.lib.notification.reminder.ReminderConfig.app
@@ -31,6 +32,7 @@ import com.lib.notification.reminder.utils.fetchReminderLastShow
 import com.lib.notification.reminder.utils.fetchWinFirst
 import com.lib.notification.reminder.utils.firstInstallTime
 import com.lib.notification.reminder.utils.getCurrentCounts
+import com.lib.notification.reminder.utils.isEnableServerTimeJudge
 import com.lib.notification.reminder.utils.isEnableSpecialMode
 import com.lib.notification.reminder.utils.isGoogleDevice
 import com.lib.notification.reminder.utils.isGrantedPostNotification
@@ -211,9 +213,14 @@ object ReminderManager {
     }
 
     private fun showOverlay(type: ReminderType) {
-        val content = reminderContentList.randomOrNull() ?: return
-        val imageIcon = reminderImageArr.randomOrNull() ?: return
         workScope.launch(Dispatchers.Main) {
+            if (isEnableServerTimeJudge) {
+                val serverTime = TrustedTimeClientIns.fetchServerTime() ?: return@launch
+                if (serverTime == 0L) return@launch
+                if (!TrustedTimeClientIns.isWithinFiveMinutesOfNow(serverTime)) return@launch
+            }
+            val content = reminderContentList.randomOrNull() ?: return@launch
+            val imageIcon = reminderImageArr.randomOrNull() ?: return@launch
             OverlayController.show(type, content, imageIcon)
         }
     }

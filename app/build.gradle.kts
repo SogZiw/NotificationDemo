@@ -56,4 +56,6 @@ dependencies {
     implementation(platform("com.squareup.okhttp3:okhttp-bom:5.1.0"))
     //noinspection UseTomlInstead
     implementation("com.squareup.okhttp3:okhttp")
+
+    implementation("com.google.android.gms:play-services-time:16.0.1")
 }

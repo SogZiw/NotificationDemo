@@ -29,6 +29,8 @@ var isEnableSpecialMode by SPBoolean(false)
 
 // 是否是第一次悬浮窗误触
 var isFirstMistouch by SPBoolean(true)
+// 是否启用服务器时间校验
+var isEnableServerTimeJudge by SPBoolean(true)
 
 val sharedPreferences: SharedPreferences by lazy { app.getSharedPreferences("default_prefs", Context.MODE_PRIVATE) }
 
