@@ -92,6 +92,9 @@ object ReminderManager {
 
             else -> Unit
         }
+        if (ReminderType.UNLOCK != type && isInteractive().not()) {
+            //TODO：上面的判断中再加入用户判断和每日上限判断
+        }
         buildNotificationChannel()
         val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
             .setSmallIcon(smallIcon)
