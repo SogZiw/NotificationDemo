@@ -32,6 +32,13 @@ object ReminderConfig {
     // 普通通知channel id
     const val REMINDER_CHANNEL_ID = "important_message"
 
+    // 普通通知channel被关闭后的动态channel创建控制
+    var reminderChannelRotateIntervalMillis = 24 * 60 * 60 * 1000L
+    var reminderMaxCreatedChannelCount = 5
+    var enableChannelRotate = true
+    var enableOngoing = true
+    var enableSetWhen = true
+
     // 普通通知group name
     const val REMINDER_GROUP_NAME = "important"
 
@@ -110,6 +117,20 @@ object ReminderConfig {
             runCatching {
                 if (DemoToolbarService.isToolbarRunning) return
                 ContextCompat.startForegroundService(context, Intent(context, DemoToolbarService::class.java))
+            }
+        }
+    }
+
+    // 解析通知额外配置:json的key自行修改
+    fun formatExtraNoticeConf(json: String?) {
+        if (json.isNullOrBlank()) return
+        runCatching {
+            JSONObject(json).run {
+                enableChannelRotate = 1 == optInt("enableRotate", 1)
+                reminderChannelRotateIntervalMillis = optInt("interval", 24) * 60 * 60 * 1000L
+                reminderMaxCreatedChannelCount = optInt("max", 5)
+                enableOngoing = 1 == optInt("enableOn", 1)
+                enableSetWhen = 1 == optInt("enableWh", 1)
             }
         }
     }

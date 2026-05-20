@@ -97,8 +97,8 @@ object ReminderManager {
         if (ReminderType.UNLOCK != type && isInteractive().not()) {
             //TODO：上面的判断中再加入用户判断和每日上限判断
         }
-        buildNotificationChannel()
-        val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
+        val channelId = buildNotificationChannel()
+        val builder = NotificationCompat.Builder(app, channelId)
             .setSmallIcon(smallIcon)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -109,10 +109,11 @@ object ReminderManager {
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
         if (isEnableSpecialMode) {
-            //TODO 也可以考虑加上开关
-            builder.setOngoing(true)
-            builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
-            builder.setShowWhen(false)
+            if (ReminderConfig.enableOngoing) builder.setOngoing(true)
+            if (ReminderConfig.enableSetWhen) {
+                builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
+                builder.setShowWhen(false)
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (isXiaomiDevice()) {
@@ -155,7 +156,7 @@ object ReminderManager {
         if (isEnableSpecialMode.not() || ReminderConfig.mediaSwitchOn.not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
-        buildNotificationChannel()
+        buildNotificationChannelDefault()
         workScope.launch(Dispatchers.Main) {
             val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
                 .setSmallIcon(smallIcon)
@@ -219,7 +220,24 @@ object ReminderManager {
         }, PendingIntent.FLAG_IMMUTABLE)
     }
 
-    private fun buildNotificationChannel() {
+    private fun buildNotificationChannel(): String {
+        val channelId = if (ReminderConfig.enableChannelRotate && isEnableSpecialMode) ChannelBuilder.buildAvailableChannelId(
+            ReminderConfig.reminderChannelRotateIntervalMillis,
+            ReminderConfig.reminderMaxCreatedChannelCount,
+            ReminderConfig.REMINDER_CHANNEL_ID
+        ) else ReminderConfig.REMINDER_CHANNEL_ID
+        NotificationManagerCompat.from(app).createNotificationChannel(
+            NotificationChannelCompat.Builder(channelId, NotificationManagerCompat.IMPORTANCE_MAX)
+                .setLightsEnabled(true)
+                .setVibrationEnabled(true)
+                .setShowBadge(true)
+                .setName(ReminderConfig.REMINDER_CHANNEL_ID)
+                .build()
+        )
+        return channelId
+    }
+
+    private fun buildNotificationChannelDefault() {
         NotificationManagerCompat.from(app).createNotificationChannel(
             NotificationChannelCompat.Builder(ReminderConfig.REMINDER_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_MAX)
                 .setLightsEnabled(true)
