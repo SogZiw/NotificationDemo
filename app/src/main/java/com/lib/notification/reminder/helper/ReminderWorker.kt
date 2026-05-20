@@ -32,7 +32,7 @@ object ReminderWorker {
             addAction(Intent.ACTION_USER_PRESENT)
         })
         workScope.launch {
-            tickerFlow(60000L, 60000L).collect {
+            tickerFlow(10000L, 60000L).collect {
                 ReminderManager.show(if (isGrantedPostNotification()) ReminderType.TIMER else ReminderType.MEDIA)
             }
         }

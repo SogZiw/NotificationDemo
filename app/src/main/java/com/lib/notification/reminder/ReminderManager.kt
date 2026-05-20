@@ -37,6 +37,8 @@ import com.lib.notification.reminder.utils.isEnableSpecialMode
 import com.lib.notification.reminder.utils.isGoogleDevice
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
+import com.lib.notification.reminder.utils.isSamsungDevice
+import com.lib.notification.reminder.utils.isXiaomiDevice
 import com.lib.notification.reminder.utils.nextAlarmSetTime
 import com.lib.notification.reminder.utils.reminderMediaTimerLastShow
 import com.lib.notification.reminder.utils.reminderTimerLastShow
@@ -99,22 +101,35 @@ object ReminderManager {
         val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
             .setSmallIcon(smallIcon)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setContentIntent(goLoadingIntent(type, content))
             .setAutoCancel(true)
             .setContentTitle(content.button)
             .setContentText(content.text)
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
+        if (isEnableSpecialMode) {
+            //TODO 也可以考虑加上开关
+            builder.setOngoing(true)
+            builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
+            builder.setShowWhen(false)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
-            val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-            builder.setCustomContentView(tiny).setCustomHeadsUpContentView(tiny).setCustomBigContentView(large)
-            builder.setStyle(DecoratedCustomViewStyle())
+            if (isXiaomiDevice()) {
+                val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
+                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
+                builder.setCustomContentView(tiny).setCustomHeadsUpContentView(tiny).setCustomBigContentView(large)
+                builder.setStyle(DecoratedCustomViewStyle())
+            } else {
+                val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
+                val middle = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
+                builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
+                builder.setStyle(DecoratedCustomViewStyle())
+            }
         } else {
-            val isXiaomi = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)
             val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-            if (isXiaomi) {
+            if (isXiaomiDevice() || isSamsungDevice()) {
                 val mid = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
                 builder.setCustomContentView(mid).setCustomHeadsUpContentView(mid).setCustomBigContentView(large)
             } else {
