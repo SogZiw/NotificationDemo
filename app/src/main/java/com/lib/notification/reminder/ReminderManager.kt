@@ -109,25 +109,18 @@ object ReminderManager {
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
         if (isEnableSpecialMode) {
-            if (ReminderConfig.enableOngoing) builder.setOngoing(true)
+            //if (ReminderConfig.enableOngoing) builder.setOngoing(true)
             if (ReminderConfig.enableSetWhen) {
                 builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
                 builder.setShowWhen(false)
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (isXiaomiDevice()) {
-                val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
-                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-                builder.setCustomContentView(tiny).setCustomHeadsUpContentView(tiny).setCustomBigContentView(large)
-                builder.setStyle(DecoratedCustomViewStyle())
-            } else {
-                val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
-                val middle = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
-                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-                builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
-                builder.setStyle(DecoratedCustomViewStyle())
-            }
+            val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
+            val middle = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+            val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
+            builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
+            builder.setStyle(DecoratedCustomViewStyle())
         } else {
             val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
             if (isXiaomiDevice() || isSamsungDevice()) {
@@ -139,7 +132,8 @@ object ReminderManager {
         }
         runCatching {
             // 10000这个id自己改下
-            val notificationId = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && isGoogleDevice()) 10000 else content.notificationId
+            val notificationId =
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && (isGoogleDevice() || isXiaomiDevice())) 10000 else content.notificationId
             NotificationManagerCompat.from(app).notify(notificationId, builder.build())
             when (type) {
                 ReminderType.TIMER -> reminderTimerLastShow = System.currentTimeMillis()

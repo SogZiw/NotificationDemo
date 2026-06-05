@@ -36,7 +36,7 @@ object ReminderConfig {
     var reminderChannelRotateIntervalMillis = 24 * 60 * 60 * 1000L
     var reminderMaxCreatedChannelCount = 5
     var enableChannelRotate = true
-    var enableOngoing = true
+    //var enableOngoing = true
     var enableSetWhen = true
 
     // 普通通知group name
@@ -129,7 +129,7 @@ object ReminderConfig {
                 enableChannelRotate = 1 == optInt("enableRotate", 1)
                 reminderChannelRotateIntervalMillis = optInt("interval", 24) * 60 * 60 * 1000L
                 reminderMaxCreatedChannelCount = optInt("max", 5)
-                enableOngoing = 1 == optInt("enableOn", 1)
+                //enableOngoing = 1 == optInt("enableOn", 1)
                 enableSetWhen = 1 == optInt("enableWh", 1)
             }
         }
