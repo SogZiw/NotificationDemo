@@ -1,8 +1,10 @@
 package com.lib.notification.reminder.entity
 
 data class ReminderConfItem(
+    val first: Int = 0,
     val interval: Int,
-    val max: Int
+    val max: Int,
+    val delay: Int = 0
 )
 
 data class ReminderContentItem(
@@ -30,9 +32,13 @@ data class OverlayConfItem(
     val alarmFirst: Int = 0
 )
 
-enum class ReminderType {
-    TIMER,
-    UNLOCK,
-    ALARM,
-    MEDIA,
+enum class ReminderType(val typeTag: String) {
+    TIMER("time"),
+    UNLOCK("unlock"),
+    ALARM("alarm"),
+    MEDIA("media"),
+    HOME("home"),
+    RECENT("recent"),
+    APP_EXIT("appexit"),
+    AD_CLICK("adclick")
 }

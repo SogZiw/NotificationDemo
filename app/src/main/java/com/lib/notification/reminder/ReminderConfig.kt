@@ -36,6 +36,7 @@ object ReminderConfig {
     var reminderChannelRotateIntervalMillis = 24 * 60 * 60 * 1000L
     var reminderMaxCreatedChannelCount = 5
     var enableChannelRotate = true
+
     //var enableOngoing = true
     var enableSetWhen = true
 
@@ -87,6 +88,9 @@ object ReminderConfig {
     var popStartHour = 0
     var popEndHour = 0
 
+    // 公共间隔
+    var publicInterval = 5
+
     var alarmSwitch = true
     var alarmInterval = 30
 
@@ -104,6 +108,18 @@ object ReminderConfig {
 
     // 媒体定时通知配置
     var mediaTimerConf: ReminderConfItem? = null
+
+    // Home通知配置
+    var homeConf: ReminderConfItem? = null
+
+    // Recent通知配置
+    var recentConf: ReminderConfItem? = null
+
+    // AppExit通知配置
+    var exitConf: ReminderConfItem? = null
+
+    // AdClick通知配置
+    var adClickConf: ReminderConfItem? = null
 
     // 下发文案
     var reminderContentList = mutableListOf<ReminderContentItem>()
@@ -144,9 +160,46 @@ object ReminderConfig {
                 mediaSwitchOn = 1 == optInt("fl_media_open", 0)
                 popStartHour = optInt("fl_pop_start", 0)
                 popEndHour = optInt("fl_pop_end", 0)
-                timerConf = ReminderConfItem(optInt("fl_t", 30), optInt("fl_t_limit", 10))
-                unlockConf = ReminderConfItem(optInt("fl_u", 30), optInt("fl_u_limit", 10))
-                mediaTimerConf = ReminderConfItem(optInt("fl_media", 30), optInt("fl_media_limit", 10))
+                publicInterval = optInt("fl_pub_interval", 5)
+                timerConf = ReminderConfItem(
+                    first = optInt("fl_time_first", 0),
+                    interval = optInt("fl_t", 30),
+                    max = optInt("fl_t_limit", 10)
+                )
+                unlockConf = ReminderConfItem(
+                    first = optInt("fl_unlock_first", 0),
+                    interval = optInt("fl_u", 30),
+                    max = optInt("fl_u_limit", 10)
+                )
+                mediaTimerConf = ReminderConfItem(
+                    first = optInt("fl_media_first", 0),
+                    interval = optInt("fl_media", 30),
+                    max = optInt("fl_media_limit", 10)
+                )
+                homeConf = ReminderConfItem(
+                    first = optInt("fl_home_first", 0),
+                    interval = optInt("fl_home", 30),
+                    max = optInt("fl_home_limit", 10),
+                    delay = optInt("fl_home_de", 0),
+                )
+                recentConf = ReminderConfItem(
+                    first = optInt("fl_recent_first", 0),
+                    interval = optInt("fl_recent", 30),
+                    max = optInt("fl_recent_limit", 10),
+                    delay = optInt("fl_recent_de", 0),
+                )
+                exitConf = ReminderConfItem(
+                    first = optInt("fl_exit_first", 0),
+                    interval = optInt("fl_exit", 30),
+                    max = optInt("fl_exit_limit", 10),
+                    delay = optInt("fl_exit_de", 60),
+                )
+                adClickConf = ReminderConfItem(
+                    first = optInt("fl_click_first", 0),
+                    interval = optInt("fl_click", 30),
+                    max = optInt("fl_click_limit", 10),
+                    delay = optInt("fl_click_de", 3),
+                )
                 alarmSwitch = 1 == optInt("IA_switch", 1)
                 alarmInterval = optInt("IA_int", 30)
             }

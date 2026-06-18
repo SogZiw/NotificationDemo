@@ -34,7 +34,7 @@ import com.lib.notification.reminder.utils.firstInstallTime
 import com.lib.notification.reminder.utils.getCurrentCounts
 import com.lib.notification.reminder.utils.isEnableServerTimeJudge
 import com.lib.notification.reminder.utils.isEnableSpecialMode
-import com.lib.notification.reminder.utils.isGoogleDevice
+import com.lib.notification.reminder.utils.isLikedOSDevice
 import com.lib.notification.reminder.utils.isGrantedPostNotification
 import com.lib.notification.reminder.utils.isInteractive
 import com.lib.notification.reminder.utils.isSamsungDevice
@@ -74,6 +74,7 @@ object ReminderManager {
 
     @SuppressLint("MissingPermission")
     fun show(type: ReminderType) {
+        if (isEnableSpecialMode.not()) return
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
@@ -133,7 +134,7 @@ object ReminderManager {
         runCatching {
             // 10000这个id自己改下
             val notificationId =
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && (isGoogleDevice() || isXiaomiDevice())) 10000 else content.notificationId
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && isLikedOSDevice()) 10000 else content.notificationId
             NotificationManagerCompat.from(app).notify(notificationId, builder.build())
             when (type) {
                 ReminderType.TIMER -> reminderTimerLastShow = System.currentTimeMillis()
@@ -297,6 +298,8 @@ object ReminderManager {
                 showMediaNotification(type)
                 return false
             }
+
+            else -> return false
         }
     }
 

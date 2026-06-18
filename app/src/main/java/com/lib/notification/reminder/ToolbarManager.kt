@@ -15,8 +15,7 @@ import com.lib.notification.R
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderConfig.smallIcon
 import com.lib.notification.reminder.entity.ToolbarConfItem
-import com.lib.notification.reminder.utils.isGoogleDevice
-import com.lib.notification.reminder.utils.isXiaomiDevice
+import com.lib.notification.reminder.utils.isLikedOSDevice
 import kotlin.random.Random
 
 object ToolbarManager {
@@ -29,7 +28,7 @@ object ToolbarManager {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setSound(null)
-            .setOngoing(true)
+            //.setOngoing(true)
             .setOnlyAlertOnce(true)
         val largeRemoteViews = buildRemoteViews(R.layout.layout_toolbar, ReminderConfig.toolbarContent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -74,7 +73,7 @@ object ToolbarManager {
 
     private fun buildNotificationChannel() {
         val importance =
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && (isGoogleDevice() || isXiaomiDevice())) NotificationManagerCompat.IMPORTANCE_MIN else NotificationManagerCompat.IMPORTANCE_DEFAULT
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && isLikedOSDevice()) NotificationManagerCompat.IMPORTANCE_MIN else NotificationManagerCompat.IMPORTANCE_DEFAULT
         NotificationManagerCompat.from(app).createNotificationChannel(
             NotificationChannelCompat.Builder(ReminderConfig.TOOLBAR_CHANNEL_ID, importance)
                 .setSound(null, null)

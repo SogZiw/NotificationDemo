@@ -21,6 +21,12 @@ fun isGoogleDevice() = Build.MANUFACTURER.equals("Google", ignoreCase = true)
 
 fun isXiaomiDevice() = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)
 
+fun isFCNTDevice() = Build.MANUFACTURER.equals("FCNT", ignoreCase = true)
+
+fun isSharpDevice() = Build.MANUFACTURER.equals("SHARP", ignoreCase = true)
+
+fun isLikedOSDevice() = isGoogleDevice() || isXiaomiDevice() || isFCNTDevice() || isSharpDevice()
+
 fun getCountryCode(): String {
     return deviceFirstCountryCode.ifBlank {
         val cc = Locale.getDefault().country
