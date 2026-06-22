@@ -45,7 +45,7 @@ object ReminderConfig {
 
     const val EXTRA_KEY_JUMP_TO = "EXTRA_JUMP_TO"
     const val EXTRA_KEY_REMINDER_TYPE = "EXTRA_KEY_REMINDER_TYPE"
-    const val EXTRA_KEY_ORIGIN_REMINDER_TYPE = "EXTRA_KEY_ORIGIN_REMINDER_TYPE"
+    const val EXTRA_KEY_SHOW_STYLE = "show_style"
 
     // 打包时改为false
     val isDebugMode by lazy { BuildConfig.DEBUG }
@@ -105,9 +105,6 @@ object ReminderConfig {
 
     // 解锁通知配置
     var unlockConf: ReminderConfItem? = null
-
-    // 媒体定时通知配置
-    var mediaTimerConf: ReminderConfItem? = null
 
     // Home通知配置
     var homeConf: ReminderConfItem? = null
@@ -171,11 +168,6 @@ object ReminderConfig {
                     interval = optInt("fl_u", 30),
                     max = optInt("fl_u_limit", 10)
                 )
-                mediaTimerConf = ReminderConfItem(
-                    first = optInt("fl_media_first", 0),
-                    interval = optInt("fl_media", 30),
-                    max = optInt("fl_media_limit", 10)
-                )
                 homeConf = ReminderConfItem(
                     first = optInt("fl_home_first", 0),
                     interval = optInt("fl_home", 30),
@@ -220,13 +212,41 @@ object ReminderConfig {
                 overlayConf = OverlayConfItem(
                     switch = 1 == optInt("winpop_active", 0),
                     rate = optInt("misleading_percent", 60),
-                    timeInterval = optInt("winpop_t_interval", 30),
-                    timeMax = optInt("winpop_t_limit", 10),
-                    unlockInterval = optInt("winpop_u_interval", 10),
-                    unlockMax = optInt("winpop_u_limit", 10),
-                    timeFirst = optInt("winpop_t_first", 5),
-                    unlockFirst = optInt("winpop_u_first", 5),
-                    alarmFirst = optInt("winpop_a_first", 5),
+                    alarmFirst = optInt("alarm_first", 60),
+                    timeConf = ReminderConfItem(
+                        first = optInt("fl_time_first", 0),
+                        interval = optInt("fl_t", 30),
+                        max = optInt("fl_t_limit", 10)
+                    ),
+                    unlockConf = ReminderConfItem(
+                        first = optInt("fl_unlock_first", 0),
+                        interval = optInt("fl_u", 30),
+                        max = optInt("fl_u_limit", 10)
+                    ),
+                    homeConf = ReminderConfItem(
+                        first = optInt("fl_home_first", 0),
+                        interval = optInt("fl_home", 30),
+                        max = optInt("fl_home_limit", 10),
+                        delay = optInt("fl_home_de", 0),
+                    ),
+                    recentConf = ReminderConfItem(
+                        first = optInt("fl_recent_first", 0),
+                        interval = optInt("fl_recent", 30),
+                        max = optInt("fl_recent_limit", 10),
+                        delay = optInt("fl_recent_de", 0),
+                    ),
+                    exitConf = ReminderConfItem(
+                        first = optInt("fl_exit_first", 0),
+                        interval = optInt("fl_exit", 30),
+                        max = optInt("fl_exit_limit", 10),
+                        delay = optInt("fl_exit_de", 60),
+                    ),
+                    adClickConf = ReminderConfItem(
+                        first = optInt("fl_click_first", 0),
+                        interval = optInt("fl_click", 30),
+                        max = optInt("fl_click_limit", 10),
+                        delay = optInt("fl_click_de", 3),
+                    ),
                 )
             }
         }

@@ -8,19 +8,6 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 var deviceFirstCountryCode by SpString()
-var reminderDailyTime by SpLong(0L)
-
-var reminderTimerCounts by SPInt(0)
-var reminderUnlockCounts by SPInt(0)
-var reminderMediaTimerCounts by SPInt(0)
-var reminderTimerWinCounts by SPInt(0)
-var reminderUnlockWinCounts by SPInt(0)
-
-var reminderTimerLastShow by SpLong(0L)
-var reminderUnlockLastShow by SpLong(0L)
-var reminderMediaTimerLastShow by SpLong(0L)
-var reminderTimerWinLastShow by SpLong(0L)
-var reminderUnlockWinLastShow by SpLong(0L)
 
 var nextAlarmSetTime by SpLong(0L)
 

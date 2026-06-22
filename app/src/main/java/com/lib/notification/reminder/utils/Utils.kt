@@ -4,13 +4,14 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
-import android.provider.Settings
 import android.text.format.DateUtils
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import com.lib.notification.reminder.ReminderConfig
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.entity.ReminderContentItem
+import com.lib.notification.reminder.entity.ReminderShowStyle
 import com.lib.notification.reminder.entity.ReminderType
 import org.json.JSONArray
 import java.util.Locale
@@ -60,10 +61,6 @@ fun parseReminderContent(jsonString: String): MutableList<ReminderContentItem> {
     return result
 }
 
-fun isGrantedOverlay(): Boolean {
-    return Settings.canDrawOverlays(app)
-}
-
 fun isGrantedPostNotification(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(app, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -72,70 +69,41 @@ fun isGrantedPostNotification(): Boolean {
 
 fun isInteractive() = runCatching { (app.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive }.getOrNull() ?: false
 
-fun fetchWinFirst(type: ReminderType): Int {
-    return when (type) {
-        ReminderType.TIMER, ReminderType.MEDIA -> ReminderConfig.overlayConf?.timeFirst ?: 0
-        ReminderType.UNLOCK -> ReminderConfig.overlayConf?.unlockFirst ?: 0
-        ReminderType.ALARM -> ReminderConfig.overlayConf?.alarmFirst ?: 0
-    }
+fun reminderEventParams(type: ReminderType, showStyle: ReminderShowStyle): HashMap<String, Any?> {
+    return hashMapOf(
+        "from_type" to type.typeTag,
+        "show_style" to showStyle.eventValue
+    )
 }
 
-fun fetchReminderLastShow(type: ReminderType, isOverlay: Boolean): Long {
-    return when (type) {
-        ReminderType.TIMER -> if (isOverlay) reminderTimerWinLastShow else reminderTimerLastShow
-        ReminderType.UNLOCK -> if (isOverlay) reminderUnlockWinLastShow else reminderUnlockLastShow
-        ReminderType.MEDIA -> reminderMediaTimerLastShow
-        else -> 0L
-    }
+private fun reminderScene(isOverlay: Boolean) = if (isOverlay) "overlay" else "notification"
+
+private fun reminderCountsKey(type: ReminderType, isOverlay: Boolean) = "reminder_${reminderScene(isOverlay)}_${type.typeTag}_counts"
+
+private fun reminderCountsDateKey(type: ReminderType, isOverlay: Boolean) = "reminder_${reminderScene(isOverlay)}_${type.typeTag}_counts_date"
+
+private fun reminderLastShowKey(type: ReminderType, isOverlay: Boolean) = "reminder_${reminderScene(isOverlay)}_${type.typeTag}_last_show"
+
+fun fetchReminderShow(type: ReminderType, isOverlay: Boolean): Pair<Int, Long> {
+    if (ReminderType.ALARM == type) return 0 to 0L
+    val countsDate = sharedPreferences.getLong(reminderCountsDateKey(type, isOverlay), 0L)
+    val counts = if (DateUtils.isToday(countsDate)) sharedPreferences.getInt(reminderCountsKey(type, isOverlay), 0) else 0
+    val lastShow = sharedPreferences.getLong(reminderLastShowKey(type, isOverlay), 0L)
+    return counts to lastShow
 }
 
-fun fetchReminderCounts(type: ReminderType, isOverlay: Boolean): Int {
-    return when (type) {
-        ReminderType.TIMER -> if (isOverlay) reminderTimerWinCounts else reminderTimerCounts
-        ReminderType.UNLOCK -> if (isOverlay) reminderUnlockWinCounts else reminderUnlockCounts
-        ReminderType.MEDIA -> reminderMediaTimerCounts
-        else -> 0
+fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
+    if (ReminderType.ALARM == type) return
+    val now = System.currentTimeMillis()
+    val countsDateKey = reminderCountsDateKey(type, isOverlay)
+    val countsKey = reminderCountsKey(type, isOverlay)
+    val lastShowKey = reminderLastShowKey(type, isOverlay)
+    val currentCounts = if (DateUtils.isToday(sharedPreferences.getLong(countsDateKey, 0L))) {
+        sharedPreferences.getInt(countsKey, 0)
+    } else 0
+    sharedPreferences.edit(commit = true) {
+        putInt(countsKey, currentCounts + 1)
+        putLong(countsDateKey, now)
+        putLong(lastShowKey, now)
     }
-}
-
-fun updateReminderCounts(type: ReminderType, newCounts: Int, isOverlay: Boolean) {
-    when (type) {
-        ReminderType.TIMER -> {
-            if (isOverlay) reminderTimerWinCounts = newCounts else reminderTimerCounts = newCounts
-        }
-
-        ReminderType.UNLOCK -> {
-            if (isOverlay) reminderUnlockWinCounts = newCounts else reminderUnlockCounts = newCounts
-        }
-
-        ReminderType.MEDIA -> reminderMediaTimerCounts = newCounts
-        else -> Unit
-    }
-}
-
-fun updateCurrentCounts(type: ReminderType, isOverlay: Boolean) {
-    val currentTime = reminderDailyTime
-    if (DateUtils.isToday(currentTime)) {
-        val counts = fetchReminderCounts(type, isOverlay)
-        updateReminderCounts(type, counts + 1, isOverlay)
-    } else {
-        updateReminderCounts(type, 1, isOverlay)
-    }
-}
-
-fun getCurrentCounts(type: ReminderType, isOverlay: Boolean): Int {
-    val currentTime = reminderDailyTime
-    val counts: Int
-    if (DateUtils.isToday(currentTime)) {
-        counts = fetchReminderCounts(type, isOverlay)
-    } else {
-        reminderTimerCounts = 0
-        reminderUnlockCounts = 0
-        reminderMediaTimerCounts = 0
-        reminderTimerWinCounts = 0
-        reminderUnlockWinCounts = 0
-        counts = 0
-    }
-    reminderDailyTime = System.currentTimeMillis()
-    return counts
 }

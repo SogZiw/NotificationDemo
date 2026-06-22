@@ -18,11 +18,11 @@ import com.lib.notification.databinding.LayoutOverlayBinding
 import com.lib.notification.event.EventManager
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.entity.ReminderContentItem
+import com.lib.notification.reminder.entity.ReminderShowStyle
 import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.utils.isFirstMistouch
-import com.lib.notification.reminder.utils.reminderTimerWinLastShow
-import com.lib.notification.reminder.utils.reminderUnlockWinLastShow
-import com.lib.notification.reminder.utils.updateCurrentCounts
+import com.lib.notification.reminder.utils.reminderEventParams
+import com.lib.notification.reminder.utils.updateReminderShow
 import kotlin.random.Random
 
 @SuppressLint("StaticFieldLeak")
@@ -34,12 +34,7 @@ object OverlayController {
 
     fun show(type: ReminderType, content: ReminderContentItem, imageIcon: Int) {
         if (overlayView != null) return
-        when (type) {
-            ReminderType.TIMER -> reminderTimerWinLastShow = System.currentTimeMillis()
-            ReminderType.UNLOCK -> reminderUnlockWinLastShow = System.currentTimeMillis()
-            else -> Unit
-        }
-        updateCurrentCounts(type, true)
+        updateReminderShow(type, true)
         isNeedMistouch = Random.nextInt(0, 101) <= (ReminderConfig.overlayConf?.rate ?: 50)
         if (isFirstMistouch || isNeedMistouch) {
             // 广告预加载
@@ -71,29 +66,19 @@ object OverlayController {
         }
         startScaleAnimation(viewBinding.textButton)
         EventManager.customEvent(
-            "winpop_show", hashMapOf(
-                "from_type" to when (type) {
-                    ReminderType.TIMER -> "time"
-                    ReminderType.UNLOCK -> "unlock"
-                    ReminderType.ALARM -> "alarm"
-                    else -> ""
-                }
-            )
+            "winpop_show",
+            reminderEventParams(type, ReminderShowStyle.OVERLAY)
         )
     }
 
     private fun goLoadingIntent(type: ReminderType, item: ReminderContentItem) {
         EventManager.customEvent(
-            "winpop_click", hashMapOf(
-                "from_type" to when (type) {
-                    ReminderType.TIMER -> "time"
-                    ReminderType.UNLOCK -> "unlock"
-                    ReminderType.ALARM -> "alarm"
-                    else -> ""
-                }
-            )
+            "winpop_click",
+            reminderEventParams(type, ReminderShowStyle.OVERLAY)
         )
         app.startActivity(Intent(app, MainActivity::class.java).apply {
+            putExtra(ReminderConfig.EXTRA_KEY_REMINDER_TYPE, type.ordinal)
+            putExtra(ReminderConfig.EXTRA_KEY_SHOW_STYLE, ReminderShowStyle.OVERLAY.eventValue)
             putExtra(ReminderConfig.EXTRA_KEY_JUMP_TO, item.jump)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         })
@@ -119,22 +104,6 @@ object OverlayController {
             duration = 1000L
             interpolator = AccelerateDecelerateInterpolator()
             start()
-        }
-    }
-
-
-    private fun buildLayoutParams(): WindowManager.LayoutParams {
-        val width = app.resources.displayMetrics.widthPixels - marginOffset
-        return WindowManager.LayoutParams(
-            width,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            x = 0
-            y = marginOffset
         }
     }
 

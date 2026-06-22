@@ -23,22 +23,27 @@ data class ToolbarConfItem(
 data class OverlayConfItem(
     val switch: Boolean,
     val rate: Int,
-    val timeInterval: Int,
-    val timeMax: Int,
-    val unlockInterval: Int,
-    val unlockMax: Int,
-    val timeFirst: Int = 0,
-    val unlockFirst: Int = 0,
-    val alarmFirst: Int = 0
+    val alarmFirst: Int,
+    var timeConf: ReminderConfItem? = null,
+    var unlockConf: ReminderConfItem? = null,
+    var homeConf: ReminderConfItem? = null,
+    var recentConf: ReminderConfItem? = null,
+    var exitConf: ReminderConfItem? = null,
+    var adClickConf: ReminderConfItem? = null,
 )
 
 enum class ReminderType(val typeTag: String) {
     TIMER("time"),
     UNLOCK("unlock"),
     ALARM("alarm"),
-    MEDIA("media"),
     HOME("home"),
     RECENT("recent"),
     APP_EXIT("appexit"),
     AD_CLICK("adclick")
+}
+
+enum class ReminderShowStyle(val eventValue: String) {
+    NOTIFICATION("notification"),
+    MEDIA("media"),
+    OVERLAY("overlay")
 }
