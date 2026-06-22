@@ -84,6 +84,10 @@ private fun reminderCountsDateKey(type: ReminderType, isOverlay: Boolean) = "rem
 
 private fun reminderLastShowKey(type: ReminderType, isOverlay: Boolean) = "reminder_${reminderScene(isOverlay)}_${type.typeTag}_last_show"
 
+fun fetchReminderPublicLastShow(): Long {
+    return reminderPublicLastShow
+}
+
 fun fetchReminderShow(type: ReminderType, isOverlay: Boolean): Pair<Int, Long> {
     if (ReminderType.ALARM == type) return 0 to 0L
     val countsDate = sharedPreferences.getLong(reminderCountsDateKey(type, isOverlay), 0L)
@@ -93,8 +97,11 @@ fun fetchReminderShow(type: ReminderType, isOverlay: Boolean): Pair<Int, Long> {
 }
 
 fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
-    if (ReminderType.ALARM == type) return
     val now = System.currentTimeMillis()
+    if (ReminderType.ALARM == type) {
+        reminderPublicLastShow = now
+        return
+    }
     val countsDateKey = reminderCountsDateKey(type, isOverlay)
     val countsKey = reminderCountsKey(type, isOverlay)
     val lastShowKey = reminderLastShowKey(type, isOverlay)
@@ -106,4 +113,5 @@ fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
         putLong(countsDateKey, now)
         putLong(lastShowKey, now)
     }
+    reminderPublicLastShow = now
 }

@@ -8,6 +8,7 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 var deviceFirstCountryCode by SpString()
+var reminderPublicLastShow by SpLong(0L)
 
 var nextAlarmSetTime by SpLong(0L)
 

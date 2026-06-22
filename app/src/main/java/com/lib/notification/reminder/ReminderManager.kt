@@ -29,6 +29,7 @@ import com.lib.notification.reminder.entity.ReminderShowStyle
 import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.helper.AppLifecycleManager
 import com.lib.notification.reminder.helper.ReminderWorker.workScope
+import com.lib.notification.reminder.utils.fetchReminderPublicLastShow
 import com.lib.notification.reminder.utils.fetchReminderShow
 import com.lib.notification.reminder.utils.firstInstallTime
 import com.lib.notification.reminder.utils.isEnableServerTimeJudge
@@ -231,6 +232,7 @@ object ReminderManager {
 
     // 判断悬浮窗配置是否满足
     private fun judgeWinConfig(type: ReminderType): Boolean {
+        if (judgePublicInterval().not()) return false
         val overlayConf = ReminderConfig.overlayConf ?: return false
         if (ReminderType.ALARM == type) {
             val first = overlayConf.alarmFirst
@@ -263,6 +265,7 @@ object ReminderManager {
 
     // 判断通知配置相关：现普通通知和媒体通知走同样的配置
     private fun judgeConfig(type: ReminderType): Boolean {
+        if (judgePublicInterval().not()) return false
         if (ReminderType.ALARM == type) return true
         val item = when (type) {
             ReminderType.TIMER -> ReminderConfig.timerConf
@@ -285,6 +288,12 @@ object ReminderManager {
             }
         }
         return true
+    }
+
+    private fun judgePublicInterval(): Boolean {
+        val interval = ReminderConfig.publicInterval
+        if (interval == 0) return true
+        return (System.currentTimeMillis() - fetchReminderPublicLastShow()) >= (interval * 60000L)
     }
 
 }
