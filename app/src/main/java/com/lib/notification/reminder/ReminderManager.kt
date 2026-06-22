@@ -71,6 +71,7 @@ object ReminderManager {
     }
 
     @SuppressLint("MissingPermission")
+    @Synchronized
     fun show(type: ReminderType) {
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
@@ -248,6 +249,7 @@ object ReminderManager {
                 else -> null
             } ?: return false
             if (confItem.first != 0 && (System.currentTimeMillis() - firstInstallTime()) < (confItem.first * 60000L)) return false
+            if (confItem.max < 0) return false
             val (counts, lastShow) = fetchReminderShow(type, true)
             if (confItem.interval != 0 && (System.currentTimeMillis() - lastShow) < (confItem.interval * 60000L)) return false
             if (confItem.max != 0 && counts >= confItem.max) return false
@@ -276,6 +278,7 @@ object ReminderManager {
             ReminderType.AD_CLICK -> ReminderConfig.adClickConf
             else -> null
         } ?: return false
+        if (item.max < 0) return false
         val (counts, lastShow) = fetchReminderShow(type, false)
         if (item.interval != 0 && (System.currentTimeMillis() - lastShow) < (item.interval * 60000L)) return false
         if (item.max != 0 && counts >= item.max) return false

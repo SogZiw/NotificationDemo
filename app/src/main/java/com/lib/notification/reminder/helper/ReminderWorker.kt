@@ -4,7 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import com.lib.notification.event.EventManager
+import com.lib.notification.reminder.ReminderConfig
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.ReminderManager
 import com.lib.notification.reminder.entity.ReminderType
@@ -30,9 +32,33 @@ object ReminderWorker {
         app.registerReceiver(unlockReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_USER_PRESENT)
         })
+        ContextCompat.registerReceiver(app, reasonReceiver, IntentFilter(Intent.ACTION_CLOSE_SYSTEM_DIALOGS), ContextCompat.RECEIVER_NOT_EXPORTED)
         workScope.launch {
             tickerFlow(10000L, 60000L).collect {
                 ReminderManager.show(ReminderType.TIMER)
+            }
+        }
+    }
+
+    // show广告点击通知
+    fun showAdClickNotification() {
+        workScope.launch {
+            delay((ReminderConfig.adClickConf?.delay ?: 3) * 1000L)
+            ReminderManager.show(ReminderType.AD_CLICK)
+        }
+    }
+
+    private val reasonReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                workScope.launch {
+                    delay(1000L)
+                    if (intent?.action != Intent.ACTION_CLOSE_SYSTEM_DIALOGS) return@launch
+                    when (intent.getStringExtra("reason").orEmpty()) {
+                        "homekey", "fs_gesture" -> ReminderManager.show(ReminderType.HOME)
+                        else -> ReminderManager.show(ReminderType.RECENT)
+                    }
+                }
             }
         }
     }

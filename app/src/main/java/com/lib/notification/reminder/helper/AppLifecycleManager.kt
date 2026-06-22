@@ -8,7 +8,13 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import com.lib.notification.MainActivity
+import com.lib.notification.reminder.ReminderConfig
+import com.lib.notification.reminder.ReminderManager
+import com.lib.notification.reminder.entity.ReminderType
 import com.lib.notification.reminder.utils.isEnableSpecialMode
+import com.lib.notification.reminder.utils.isInteractive
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 object AppLifecycleManager {
 
@@ -47,6 +53,12 @@ object AppLifecycleManager {
 
             override fun onActivityStopped(activity: Activity) {
                 foregroundCounts--
+                if (foregroundCounts <= 0 && isInteractive()) {
+                    ReminderWorker.workScope.launch {
+                        delay((ReminderConfig.exitConf?.delay ?: 60) * 1000L)
+                        ReminderManager.show(ReminderType.APP_EXIT)
+                    }
+                }
             }
         })
     }
