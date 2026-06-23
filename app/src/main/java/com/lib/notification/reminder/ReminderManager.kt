@@ -101,7 +101,11 @@ object ReminderManager {
             val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
             val middle = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
             val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
-            builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
+            if (isXiaomiDevice()) {
+                builder.setCustomContentView(middle).setCustomBigContentView(large)
+            } else {
+                builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
+            }
             builder.setStyle(DecoratedCustomViewStyle())
         } else {
             val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
