@@ -76,7 +76,7 @@ object ReminderManager {
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
-        if (ReminderType.UNLOCK != type && isInteractive().not()) {
+        if (ReminderType.TIMER == type && isInteractive().not()) {
             //TODO：上面的判断中再加入用户判断和每日上限判断
         }
         val channelId = buildNotificationChannel()
