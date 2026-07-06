@@ -32,6 +32,8 @@ object OverlayController {
     private val marginOffset by lazy { (app.resources.displayMetrics.density * 20).toInt() }
     private var isNeedMistouch = false
 
+    fun isShowing() = overlayView != null
+
     fun show(type: ReminderType, content: ReminderContentItem, imageIcon: Int) {
         if (overlayView != null) return
         updateReminderShow(type, true)

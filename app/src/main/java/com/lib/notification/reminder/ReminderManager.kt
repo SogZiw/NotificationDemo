@@ -76,6 +76,7 @@ object ReminderManager {
         if (canShow(type).not()) return
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
+        if (ReminderSceneMutex.tryAcquire().not()) return
         if (ReminderType.TIMER == type && isInteractive().not()) {
             //TODO：上面的判断中再加入用户判断和每日上限判断
         }
@@ -130,6 +131,7 @@ object ReminderManager {
     private fun showMediaNotification(originType: ReminderType) {
         val content = reminderContentList.randomOrNull() ?: return
         val imageIcon = reminderImageArr.randomOrNull() ?: return
+        if (ReminderSceneMutex.tryAcquire().not()) return
         buildNotificationChannelDefault()
         workScope.launch(Dispatchers.Main) {
             val builder = NotificationCompat.Builder(app, ReminderConfig.REMINDER_CHANNEL_ID)
@@ -208,6 +210,8 @@ object ReminderManager {
             }
             val content = reminderContentList.randomOrNull() ?: return@launch
             val imageIcon = reminderImageArr.randomOrNull() ?: return@launch
+            if (OverlayController.isShowing()) return@launch
+            if (ReminderSceneMutex.tryAcquire().not()) return@launch
             OverlayController.show(type, content, imageIcon)
         }
     }
