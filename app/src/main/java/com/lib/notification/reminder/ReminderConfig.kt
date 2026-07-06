@@ -31,6 +31,8 @@ object ReminderConfig {
 
     // 普通通知channel id
     const val REMINDER_CHANNEL_ID = "important_message"
+    // 连续通知channel id
+    const val REMINDER_EXTRA_CHANNEL_ID = "important_message_extra"
 
     // 普通通知channel被关闭后的动态channel创建控制
     var reminderChannelRotateIntervalMillis = 24 * 60 * 60 * 1000L
@@ -90,6 +92,12 @@ object ReminderConfig {
 
     // 公共间隔
     var publicInterval = 5
+
+    // 媒体通知刷新开关
+    var mediaRefresh: Int = 30
+
+    // 普通通知刷新开关
+    var notifyRefresh: Int = 30
 
     var alarmSwitch = true
     var alarmInterval = 30
@@ -158,6 +166,8 @@ object ReminderConfig {
                 popStartHour = optInt("fl_pop_start", 0)
                 popEndHour = optInt("fl_pop_end", 0)
                 publicInterval = optInt("fl_pub_interval", 5)
+                mediaRefresh = optInt("media_refresh", 30)
+                notifyRefresh = optInt("notify_refresh", 30)
                 timerConf = ReminderConfItem(
                     first = optInt("fl_time_first", 0),
                     interval = optInt("fl_t", 30),

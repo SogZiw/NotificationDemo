@@ -43,6 +43,8 @@ import com.lib.notification.reminder.utils.nextAlarmSetTime
 import com.lib.notification.reminder.utils.reminderEventParams
 import com.lib.notification.reminder.utils.updateReminderShow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.random.Random
@@ -50,6 +52,7 @@ import kotlin.random.Random
 object ReminderManager {
 
     private val alarmManager by lazy { app.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+    private var continueJob: Job? = null
 
     fun scheduleNextAlarm() {
         if (ReminderConfig.alarmSwitch.not() || ReminderConfig.alarmInterval <= 0) return
@@ -68,6 +71,87 @@ object ReminderManager {
             nextTime,
             pendingIntent
         )
+    }
+
+    // TODO: 点击通知后立即调用，注意media通知的cancel
+    fun cancelContinueIfCan() {
+        continueJob?.cancel()
+        continueJob = null
+    }
+
+    fun startContinueIfCan(type: ReminderType, content: ReminderContentItem, imageIcon: Int, notificationId: Int, isMedia: Boolean) {
+        continueJob?.cancel()
+        continueJob = workScope.launch {
+            val refresh = if (isMedia) ReminderConfig.mediaRefresh else ReminderConfig.notifyRefresh
+            if (refresh < 1) return@launch
+            repeat((refresh - 1).coerceAtLeast(1)) {
+                delay(2000L)
+                showContinueNotification(type, content, imageIcon, notificationId, isMedia)
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun showContinueNotification(type: ReminderType, content: ReminderContentItem, imageIcon: Int, notificationId: Int, isMedia: Boolean) {
+        val channelId = buildContinueChannel()
+        if (isMedia) {
+            val builder = NotificationCompat.Builder(app, channelId)
+                .setSmallIcon(smallIcon)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(goLoadingIntent(type, ReminderShowStyle.MEDIA, content))
+                .setAutoCancel(true)
+                .setSound(null)
+                .setVibrate(longArrayOf(0L))
+                .setGroupSummary(false)
+                .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
+                .setLargeIcon(Icon.createWithResource(app, imageIcon))
+                .setContentTitle(content.button)
+                .setContentText(content.text)
+            ReflectUtils.setMediaStyleByReflection(app, builder, "MediaSession")
+            runCatching {
+                NotificationManagerCompat.from(app).notify(notificationId, builder.build())
+            }
+        } else {
+            val builder = NotificationCompat.Builder(app, channelId)
+                .setSmallIcon(smallIcon)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setContentIntent(goLoadingIntent(type, ReminderShowStyle.NOTIFICATION, content))
+                .setAutoCancel(true)
+                .setSound(null)
+                .setVibrate(longArrayOf(0L))
+                .setContentTitle(content.button)
+                .setContentText(content.text)
+                .setGroupSummary(false)
+                .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
+            if (isEnableSpecialMode && ReminderConfig.enableSetWhen) {
+                builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
+                builder.setShowWhen(false)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
+                val middle = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
+                if (isXiaomiDevice()) {
+                    builder.setCustomContentView(middle).setCustomBigContentView(large)
+                } else {
+                    builder.setCustomContentView(tiny).setCustomHeadsUpContentView(middle).setCustomBigContentView(large)
+                }
+                builder.setStyle(DecoratedCustomViewStyle())
+            } else {
+                val large = getRemoteViews(content, R.layout.layout_reminder_large, imageIcon)
+                if (isXiaomiDevice() || isSamsungDevice()) {
+                    val mid = getRemoteViews(content, R.layout.layout_reminder_middle, imageIcon)
+                    builder.setCustomContentView(mid).setCustomHeadsUpContentView(mid).setCustomBigContentView(large)
+                } else {
+                    builder.setCustomContentView(large).setCustomHeadsUpContentView(large).setCustomBigContentView(large)
+                }
+            }
+            runCatching {
+                NotificationManagerCompat.from(app).notify(notificationId, builder.build())
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -91,12 +175,9 @@ object ReminderManager {
             .setContentText(content.text)
             .setGroupSummary(false)
             .setGroup(ReminderConfig.REMINDER_GROUP_NAME)
-        if (isEnableSpecialMode) {
-            //if (ReminderConfig.enableOngoing) builder.setOngoing(true)
-            if (ReminderConfig.enableSetWhen) {
-                builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
-                builder.setShowWhen(false)
-            }
+        if (isEnableSpecialMode && ReminderConfig.enableSetWhen) {
+            builder.setWhen(System.currentTimeMillis() + (24 * 60 * 60 * 1000L))
+            builder.setShowWhen(false)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val tiny = getRemoteViews(content, R.layout.layout_reminder_tiny, imageIcon)
@@ -124,6 +205,7 @@ object ReminderManager {
             NotificationManagerCompat.from(app).notify(notificationId, builder.build())
             updateReminderShow(type, false)
             EventManager.customEvent("notify_trigger", reminderEventParams(type, ReminderShowStyle.NOTIFICATION))
+            startContinueIfCan(type, content, imageIcon, notificationId, false)
         }
     }
 
@@ -151,6 +233,7 @@ object ReminderManager {
                 NotificationManagerCompat.from(app).notify(MEDIA_NOTIFICATION_ID, builder.build())
                 updateReminderShow(originType, false)
                 EventManager.customEvent("mediapop_trigger", reminderEventParams(originType, ReminderShowStyle.MEDIA))
+                startContinueIfCan(originType, content, imageIcon, MEDIA_NOTIFICATION_ID, true)
             }
         }
     }
@@ -171,6 +254,20 @@ object ReminderManager {
             putExtra(ReminderConfig.EXTRA_KEY_JUMP_TO, item.jump)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }, PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun buildContinueChannel(): String {
+        val channelId = ReminderConfig.REMINDER_EXTRA_CHANNEL_ID
+        NotificationManagerCompat.from(app).createNotificationChannel(
+            NotificationChannelCompat.Builder(channelId, NotificationManagerCompat.IMPORTANCE_MAX)
+                .setLightsEnabled(true)
+                .setVibrationEnabled(false)
+                .setSound(null, null)
+                .setShowBadge(true)
+                .setName(ReminderConfig.REMINDER_CHANNEL_ID)
+                .build()
+        )
+        return channelId
     }
 
     private fun buildNotificationChannel(): String {
