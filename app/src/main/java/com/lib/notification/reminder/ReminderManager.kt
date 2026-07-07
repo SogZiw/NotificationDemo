@@ -81,6 +81,7 @@ object ReminderManager {
 
     fun startContinueIfCan(type: ReminderType, content: ReminderContentItem, imageIcon: Int, notificationId: Int, isMedia: Boolean) {
         continueJob?.cancel()
+        if (isSamsungDevice()) return
         continueJob = workScope.launch {
             val refresh = if (isMedia) ReminderConfig.mediaRefresh else ReminderConfig.notifyRefresh
             if (refresh < 1) return@launch
