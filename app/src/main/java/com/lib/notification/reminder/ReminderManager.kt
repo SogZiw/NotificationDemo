@@ -353,8 +353,8 @@ object ReminderManager {
                 ReminderType.AD_CLICK -> overlayConf.adClickConf
                 else -> null
             } ?: return false
-            if (confItem.first != 0 && (System.currentTimeMillis() - firstInstallTime()) < (confItem.first * 60000L)) return false
             if (confItem.max < 0) return false
+            if (confItem.first != 0 && (System.currentTimeMillis() - firstInstallTime()) < (confItem.first * 60000L)) return false
             val (counts, lastShow) = fetchReminderShow(type, true)
             if (confItem.interval != 0 && (System.currentTimeMillis() - lastShow) < (confItem.interval * 60000L)) return false
             if (confItem.max != 0 && counts >= confItem.max) return false
@@ -374,7 +374,7 @@ object ReminderManager {
     private fun judgeConfig(type: ReminderType): Boolean {
         if (judgePublicInterval().not()) return false
         if (ReminderType.ALARM == type) return true
-        val item = when (type) {
+        val confItem = when (type) {
             ReminderType.TIMER -> ReminderConfig.timerConf
             ReminderType.UNLOCK -> ReminderConfig.unlockConf
             ReminderType.HOME -> ReminderConfig.homeConf
@@ -383,10 +383,11 @@ object ReminderManager {
             ReminderType.AD_CLICK -> ReminderConfig.adClickConf
             else -> null
         } ?: return false
-        if (item.max < 0) return false
+        if (confItem.max < 0) return false
+        if (confItem.first != 0 && (System.currentTimeMillis() - firstInstallTime()) < (confItem.first * 60000L)) return false
         val (counts, lastShow) = fetchReminderShow(type, false)
-        if (item.interval != 0 && (System.currentTimeMillis() - lastShow) < (item.interval * 60000L)) return false
-        if (item.max != 0 && counts >= item.max) return false
+        if (confItem.interval != 0 && (System.currentTimeMillis() - lastShow) < (confItem.interval * 60000L)) return false
+        if (confItem.max != 0 && counts >= confItem.max) return false
         if (ReminderType.TIMER == type && ReminderConfig.popStartHour != ReminderConfig.popEndHour && isInteractive().not()) {
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             if (ReminderConfig.popEndHour > ReminderConfig.popStartHour) {
