@@ -1,6 +1,20 @@
+import com.github.megatronking.stringfog.plugin.StringFogExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("stringfog")
+}
+
+apply(plugin = "stringfog")
+
+configure<StringFogExtension> {
+    implementation = "com.github.megatronking.stringfog.xor.StringFogImpl"
+    enable = true
+    // 需要加密的路径名
+    fogPackages = arrayOf("com.lib.notification")
+    kg = com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator()
+    mode = com.github.megatronking.stringfog.plugin.StringFogMode.bytes
 }
 
 android {
@@ -48,6 +62,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.xor)
 
     implementation("androidx.media:media:1.6.0")
 
