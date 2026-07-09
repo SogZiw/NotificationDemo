@@ -116,6 +116,7 @@ fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
     reminderPublicLastShow = now
 }
 
+// 通过身份判断后调用，只调用一次
 @SuppressLint("WrongConstant")
 fun enableService() {
     runCatching {
