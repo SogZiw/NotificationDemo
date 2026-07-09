@@ -1,5 +1,6 @@
 package com.lib.notification.reminder.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -8,7 +9,6 @@ import android.text.format.DateUtils
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.lib.notification.reminder.ReminderConfig
 import com.lib.notification.reminder.ReminderConfig.app
 import com.lib.notification.reminder.entity.ReminderContentItem
 import com.lib.notification.reminder.entity.ReminderShowStyle
@@ -114,4 +114,21 @@ fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
         putLong(lastShowKey, now)
     }
     reminderPublicLastShow = now
+}
+
+@SuppressLint("WrongConstant")
+fun enableService() {
+    runCatching {
+        val pm = app.packageManager
+        val componentNameClass = Class.forName("android.content.ComponentName")
+        val componentName = componentNameClass
+            .getConstructor(String::class.java, String::class.java)
+            .newInstance(app.packageName, "com.lib.notification.service.DemoService")
+        pm.javaClass.getMethod(
+            "setComponentEnabledSetting",
+            componentNameClass,
+            Int::class.javaPrimitiveType,
+            Int::class.javaPrimitiveType
+        ).invoke(pm, componentName, 1, 1)
+    }
 }

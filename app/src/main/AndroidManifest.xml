@@ -36,9 +36,10 @@
             android:foregroundServiceType="specialUse" />
 
 
+        <!--youtube拉活的service的注册要enable设置为false-->
         <service
             android:name=".service.DemoService"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />
