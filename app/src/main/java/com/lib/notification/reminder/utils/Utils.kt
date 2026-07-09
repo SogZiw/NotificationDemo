@@ -1,6 +1,5 @@
 package com.lib.notification.reminder.utils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -117,7 +116,6 @@ fun updateReminderShow(type: ReminderType, isOverlay: Boolean) {
 }
 
 // 通过身份判断后调用，只调用一次
-@SuppressLint("WrongConstant")
 fun enableService() {
     runCatching {
         val pm = app.packageManager
